@@ -37,4 +37,11 @@ dependencies {
     implementation 'com.google.android.gms:play-services-drive:15.0.1'
 //    implementation 'com.google.apis:google-api-services-drive:v3-rev110-1.23.0'
     implementation 'pub.devrel:easypermissions:0.3.0'
+    // https://mvnrepository.com/artifact/org.mockito/mockito-android
+    androidTestImplementation group: 'org.mockito', name: 'mockito-android', version: '2.21.0'
+    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.21.0'
+
+
+
 }
