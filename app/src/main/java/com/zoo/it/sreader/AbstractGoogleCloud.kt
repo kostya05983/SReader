@@ -14,6 +14,8 @@ import com.google.android.gms.drive.*
 import com.google.android.gms.drive.query.Filters
 import com.google.android.gms.drive.query.Query
 import com.google.android.gms.drive.query.SearchableField
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 
 /**
  * @author Konstantin Volivach ;)
@@ -71,16 +73,11 @@ abstract class AbstractGoogleCloud : AppCompatActivity() {
      * else it returns true
      * @param title - the file's name
      */
-    protected fun existFile(title: String): Boolean {
+    protected fun existFile(title: String): Task<MetadataBuffer> {
         val query = Query.Builder()
                 .addFilter(Filters.eq(SearchableField.TITLE, title))
                 .build()
-        val queryTask = mDriveResourceClient.query(query)
-        queryTask.result.forEach {
-            if (it.isInAppFolder)
-                return true
-        }
-        return false
+        return mDriveResourceClient.query(query)
     }
 
     /**
@@ -89,23 +86,26 @@ abstract class AbstractGoogleCloud : AppCompatActivity() {
      * @param mimeType - the file's type
      * @param content - the file's data in bytes
      */
-    protected fun createFile(title: String, mimeType: String, content: ByteArray) {
-        mDriveResourceClient.appFolder.continueWithTask {
-            val parent = it.result
-            val changeSet = MetadataChangeSet.Builder()
-                    .setTitle(title)
-                    .setMimeType(mimeType)
-                    .setStarred(true)
-                    .build()
-            val contents = mDriveResourceClient.createContents().result
-            contents.outputStream.write(content)
-            mDriveResourceClient.createFile(parent, changeSet, contents)
-        }.addOnSuccessListener {
-            Toast.makeText(this, "Успешно добавлено", Toast.LENGTH_LONG).show()
-        }.addOnFailureListener {
-            Toast.makeText(this, "Ошибка, информация отправлена администратору", Toast.LENGTH_LONG).show()
-            Log.e(tagCloud, "fail to load", it)
-        }
+    protected fun createFile(title: String, mimeType: String, content: ByteArray): Task<DriveFile> {
+        val appFolderTask = mDriveResourceClient.appFolder
+        val createContentsTask = mDriveResourceClient.createContents()
+        return Tasks.whenAll(appFolderTask, createContentsTask)
+                .continueWithTask {
+                    val parent = appFolderTask.result
+                    val contents = createContentsTask.result
+                    contents.outputStream.write(content)
+                    val changeSet = MetadataChangeSet.Builder()
+                            .setTitle(title)
+                            .setMimeType(mimeType)
+                            .setStarred(true)
+                            .build()
+                    mDriveResourceClient.createFile(parent, changeSet, contents)
+                }.addOnSuccessListener {
+                    Toast.makeText(this, "Успешно добавлено", Toast.LENGTH_LONG).show()
+                }.addOnFailureListener {
+                    Toast.makeText(this, "Ошибка, информация отправлена администратору", Toast.LENGTH_LONG).show()
+                    Log.e(tagCloud, "fail to load", it)
+                }
     }
 
     /**
@@ -114,46 +114,52 @@ abstract class AbstractGoogleCloud : AppCompatActivity() {
      * secondly it goes forEach metadata and delete it
      * @param title - the name of file to delete
      */
-    protected fun deleteFileDrive(title: String) {
-        mDriveResourceClient.appFolder.continueWithTask {
+    protected fun deleteFileDrive(title: String): ArrayList<Task<Void>> {
+        val list = ArrayList<Task<Void>>()
+        val task = mDriveResourceClient.appFolder.continueWithTask {
             val query = Query.Builder()
                     .addFilter(Filters.eq(SearchableField.TITLE, title))
                     .build()
             mDriveResourceClient.query(query)
-
         }.addOnSuccessListener { metaBuffer ->
             metaBuffer.forEach { metaData ->
                 val driveResource = metaData.driveId.asDriveResource()
-                mDriveResourceClient.delete(driveResource).addOnSuccessListener {
+                list.add(mDriveResourceClient.delete(driveResource).addOnSuccessListener {
                     Toast.makeText(this, "Книга с облака удалена успешно", Toast.LENGTH_SHORT).show()
                 }.addOnFailureListener {
                     Toast.makeText(this, "Произошла ошибка во время удаления, сообщение отправлено администратору", Toast.LENGTH_LONG).show()
                     Log.e(tagCloud, "error while deleting file from Drive, fileName=$title")
-                }
+                })
             }
         }.addOnFailureListener {
             Toast.makeText(this, "Файл не найден, сообщение отправлено администратору", Toast.LENGTH_LONG).show()
             Log.e(tagCloud, "Mistake for finding File $title")
         }
+        Tasks.await(task)
+        return list
     }
 
     /**
      * fun for downloading file
      * @param title - the file's name
      */
-    protected fun downloadFile(title: String): MetadataBuffer =
-            mDriveResourceClient.appFolder.continueWithTask {
-                val query = Query.Builder()
-                        .addFilter(Filters.eq(SearchableField.TITLE, title))
-                        .build()
-                mDriveResourceClient.query(query)
-            }.addOnSuccessListener {
-                Toast.makeText(this, "Книга $title успешно загружена", Toast.LENGTH_SHORT).show()
-            }.addOnFailureListener {
-                Log.e(tagCloud, "Downloading's mistake with $title")
-                Toast.makeText(this, "Произошла ошибка при загрузке книги $title, сообщение отправлено администратору"
-                        , Toast.LENGTH_SHORT).show()
-            }.result
+    protected fun downloadFile(title: String): Task<DriveContents> {
+        return mDriveResourceClient.appFolder.continueWithTask {
+            val query = Query.Builder()
+                    .addFilter(Filters.eq(SearchableField.TITLE, title))
+                    .build()
+            val task = mDriveResourceClient.query(query)
+            val metadata = task.result
+            mDriveResourceClient.openFile(metadata[0].driveId.asDriveFile(), DriveFile.MODE_READ_ONLY)
+        }.addOnSuccessListener {
+            Toast.makeText(this, "Книга $title успешно загружена", Toast.LENGTH_SHORT).show()
+
+        }.addOnFailureListener {
+            Log.e(tagCloud, "Downloading's mistake with $title")
+            Toast.makeText(this, "Произошла ошибка при загрузке книги $title, сообщение отправлено администратору"
+                    , Toast.LENGTH_SHORT).show()
+        }
+    }
 
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
