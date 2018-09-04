@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_activity_all"
+            android:title="Книги" />
+        <item
+            android:id="@+id/nav_activity_catalog"
+            android:title="Каталог"
+            />
+        <item
+            android:id="@+id/nav_activity_scan"
+            android:title="Поиск книг"/>
+        <item
+            android:id="@+id/nav_activity_settings"
+            android:title="Настройки"/>
+    </group>
+
+
+</menu>

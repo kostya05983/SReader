@@ -1,24 +1,17 @@
 package com.zoo.it.sreader
 
-import android.support.test.InstrumentationRegistry
 import android.support.test.filters.LargeTest
-import android.support.test.runner.AndroidJUnit4
-
-import org.junit.Test
-import org.junit.runner.RunWith
-
-import org.junit.Assert.*
-import org.junit.Rule
 import android.support.test.rule.ActivityTestRule
+import android.support.test.runner.AndroidJUnit4
 import com.google.android.gms.drive.DriveContents
 import com.google.android.gms.drive.DriveFile
 import com.google.android.gms.drive.MetadataBuffer
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
-import java.io.BufferedReader
-import java.io.FileInputStream
-import java.io.FileReader
-import java.io.Reader
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
 
 
 /**
@@ -28,7 +21,7 @@ import java.io.Reader
  */
 @RunWith(AndroidJUnit4::class)
 @LargeTest
-class ExampleInstrumentedTest {
+class AbstractGoogleCloudTest {
     @get:Rule
     public val mActivityRule = ActivityTestRule<ActivityAll>(ActivityAll::class.java)
 

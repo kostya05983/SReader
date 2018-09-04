@@ -5,6 +5,10 @@ import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.Toast
+import android.support.design.widget.NavigationView
+import android.support.v4.view.GravityCompat
+import android.support.v4.widget.DrawerLayout
+import android.view.MenuItem
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -17,10 +21,11 @@ import com.google.android.gms.drive.query.SearchableField
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 
+
 /**
  * @author Konstantin Volivach ;)
  */
-abstract class AbstractGoogleCloud : AppCompatActivity() {
+abstract class AbstractGoogleCloud : AbstractNavigation(), NavigationView.OnNavigationItemSelectedListener {
 
     private val requestCodeSignIn = 0
     private val tagCloud = "GoogleCloud"
@@ -182,4 +187,7 @@ abstract class AbstractGoogleCloud : AppCompatActivity() {
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
+
+
+
 }
